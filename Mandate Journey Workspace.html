@@ -1,0 +1,585 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mandate Journey Workspace</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: the mandate itself is the screen. A numbered record, clause by clause, sets what the customer states against what the sources prove. A side rail counts what is proven and what stands between the draft and a live mandate. A second view shows authority as a grid of accounts by people. */
+:root{
+  --bg:#eef0ec; --surface:#ffffff; --sunk:#e3e7e0; --line:#cdd3c9;
+  --fg:#16201b; --muted:#566259;
+  --accent:#0e5a48; --accent-soft:#d8ebe3; --on-accent:#ffffff;
+  --cite:#274b9f; --cite-soft:#e1e8fa;
+  --warn:#8a5200; --warn-soft:#fbecd0; --gap:#b3261e; --gap-soft:#fadcd9;
+  --hl:#fff1a8; --hl-fg:#16201b;
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#101512; --surface:#19201c; --sunk:#121814; --line:#2b362f;
+  --fg:#e7ede9; --muted:#9aa89f;
+  --accent:#6fd0b0; --accent-soft:#17362c; --on-accent:#08130f;
+  --cite:#9db6ff; --cite-soft:#1d2a4d;
+  --warn:#f0b955; --warn-soft:#3a2c10; --gap:#ff9a90; --gap-soft:#40201d;
+  --hl:#5a4a00; --hl-fg:#fff6cc;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#101512; --surface:#19201c; --sunk:#121814; --line:#2b362f;
+  --fg:#e7ede9; --muted:#9aa89f;
+  --accent:#6fd0b0; --accent-soft:#17362c; --on-accent:#08130f;
+  --cite:#9db6ff; --cite-soft:#1d2a4d;
+  --warn:#f0b955; --warn-soft:#3a2c10; --gap:#ff9a90; --gap-soft:#40201d;
+  --hl:#5a4a00; --hl-fg:#fff6cc;
+  color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14.5px;line-height:1.5}
+.app{max-width:1240px;margin:0 auto;padding-block:18px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3,h4{font-family:var(--display);margin:0;text-wrap:balance}
+h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:20px;font-weight:700}
+h3{font-size:16.5px;font-weight:500}
+h4{font-size:14.5px;font-weight:500}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+.top{display:flex;gap:14px 24px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+.brand{display:flex;gap:12px;align-items:center;min-width:0}
+.mark{width:34px;height:34px;border-radius:50%;border:2px solid var(--fg);display:grid;place-items:center;font:700 15px var(--display);flex:none}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap;background:var(--surface)}
+.seg button{border:0;border-right:1px solid var(--line);background:transparent;padding:8px 14px;text-align:left;color:var(--muted);min-width:0}
+.seg button:last-child{border-right:0}
+.seg button b{display:block;font-weight:600;font-size:14px;color:inherit}
+.seg button small{font-size:11.5px}
+.seg button[aria-checked="true"]{background:var(--fg);color:var(--bg)}
+
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:0 0 18px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-top:6px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.tabs button{border:0;background:transparent;padding:9px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;min-width:0}
+.card-h{padding:13px 18px;border-bottom:1px solid var(--line);display:flex;gap:8px 16px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.card-b{padding:16px 18px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 12px;font-weight:600;font-size:13.5px}
+.btn:hover{border-color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* record */
+.rec{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.sheet-h{padding:20px 22px 16px;border-bottom:2px solid var(--fg)}
+.sheet-h h2{margin:4px 0 6px}
+.tags{display:flex;gap:4px 16px;flex-wrap:wrap;color:var(--muted);font-size:13.5px}
+.tags b{color:var(--fg);font-weight:600}
+.clause{display:grid;grid-template-columns:44px minmax(0,1fr);padding:18px 22px 18px 12px;border-bottom:1px solid var(--line)}
+.clause:last-child{border-bottom:0}
+.clause .no{font:500 15px var(--mono);color:var(--muted);text-align:center;padding-top:1px}
+.clause.conflict .no{color:var(--gap);font-weight:600}
+.clause.later .single{color:var(--muted)}
+.cl-h{display:flex;justify-content:space-between;gap:8px 12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.proof{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;font-weight:600;border-radius:5px;padding:2px 9px;border:1px solid transparent;white-space:nowrap}
+.proof.proven{background:var(--accent-soft);color:var(--accent)}
+.proof.confirmed{border-color:var(--line);color:var(--fg)}
+.proof.waiting{background:var(--warn-soft);color:var(--warn)}
+.proof.conflict{background:var(--gap-soft);color:var(--gap)}
+.proof.later{border-color:var(--line);color:var(--muted);border-style:dashed}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.pair>div{padding:11px 14px;min-width:0}
+.pair>div+div{border-left:1px solid var(--line);background:var(--sunk)}
+.pair .eyebrow{margin-bottom:5px}
+.single{border:1px solid var(--line);border-radius:6px;padding:11px 14px}
+.over{text-decoration:underline wavy var(--gap);text-underline-offset:3px;font-weight:600}
+.cite{font:500 12px var(--mono);border:0;background:var(--cite-soft);color:var(--cite);border-radius:4px;padding:1px 6px;margin:0 1px;white-space:nowrap}
+.cite[aria-expanded="true"]{background:var(--cite);color:var(--surface)}
+.diff{margin-top:10px;border-left:3px solid var(--gap);padding:6px 0 6px 12px;font-size:14px}
+.diff b{color:var(--gap)}
+.excerpt{margin-top:10px;border:1px solid var(--cite);border-radius:6px;overflow:hidden}
+.ex-h{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:var(--cite-soft);font-size:13px;font-weight:600}
+.ex-h .lang{display:flex;gap:4px}
+.ex-h .lang button{border:1px solid var(--cite);background:transparent;color:var(--cite);border-radius:4px;padding:1px 8px;font-size:12px;font-weight:600}
+.ex-h .lang button[aria-pressed="true"]{background:var(--cite);color:var(--surface)}
+.ex-b{padding:12px 14px;font-family:Georgia,"Times New Roman",serif;font-size:14.5px;line-height:1.65}
+.ex-b p+p{margin-top:5px}
+.ex-b mark{background:var(--hl);color:var(--hl-fg);padding:0 2px;border-radius:2px}
+.ex-f{padding:8px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.opts{margin-top:14px}
+.opts>p{font-weight:600;margin-bottom:8px}
+.optgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.opt{border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.opt.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.opt dl{margin:0;display:grid;gap:5px;font-size:13px}
+.opt dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.opt dd{margin:0}
+.opt .btn{margin-top:auto;align-self:flex-start}
+.steps-f{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
+.stp{border:1px solid var(--line);border-radius:4px;padding:1px 7px}
+.stp i{font-style:normal;font-weight:600;color:var(--fg)}
+
+/* journey map */
+.mapwrap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+#mpanel .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px 28px;align-items:start}
+@media(max-width:760px){#mpanel .pgrid{grid-template-columns:minmax(0,1fr)}}
+.sum{display:flex;gap:8px 20px;flex-wrap:wrap;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);font-size:13.5px}
+.sum b{font-weight:600}
+.sum .pbar{flex:1 1 140px;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;min-width:100px}
+.sum .pbar i{display:block;height:100%;background:var(--accent)}
+.jscroll{overflow-x:auto}
+.jflow{position:relative;display:grid;grid-template-columns:repeat(6,minmax(138px,1fr)) 92px;gap:0 24px;padding:18px 18px 20px;min-width:1090px}
+.jflow svg.links{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.jstage{display:flex;flex-direction:column;gap:8px;min-width:0;position:relative}
+.jstage:not(.end)::after{content:"";position:absolute;right:-16px;top:11px;width:8px;height:8px;border-top:2px solid var(--muted);border-right:2px solid var(--muted);transform:rotate(45deg)}
+.jstage-h{border-bottom:2px solid var(--fg);padding-bottom:7px;margin-bottom:4px;min-height:58px}
+.jstage-h .n{font:500 12px var(--mono);color:var(--muted)}
+.jstage-h b{display:block;font:500 14.5px var(--display);line-height:1.2}
+.jstage-h small{color:var(--muted);font-size:12px}
+.step{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 7px;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 9px;position:relative;z-index:1}
+.step .g{grid-row:1/3;font-weight:700;font-size:14px;line-height:1.3;text-align:center}
+.step .tt{font-weight:600;font-size:13px;line-height:1.25}
+.step .mt{font-size:11.5px;color:var(--muted);line-height:1.3}
+.step .hm{grid-column:2;font:500 10.5px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.step:hover{border-color:var(--fg)}
+.step[aria-pressed="true"]{box-shadow:0 0 0 2px var(--fg)}
+.step.s-done{background:var(--accent-soft);border-color:transparent}.step.s-done .g{color:var(--accent)}
+.step.s-prog{border-color:var(--accent)}.step.s-prog .g{color:var(--accent)}
+.step.s-wait{background:var(--warn-soft);border-color:var(--warn)}.step.s-wait .g,.step.s-wait .mt{color:var(--warn)}
+.step.s-decide{background:var(--cite-soft);border-color:var(--cite)}.step.s-decide .g,.step.s-decide .mt{color:var(--cite)}
+.step.s-block{background:var(--gap-soft);border-color:var(--gap)}.step.s-block .g,.step.s-block .mt{color:var(--gap)}
+.step.s-queued{border:1.5px dashed var(--gap)}.step.s-queued .g,.step.s-queued .mt{color:var(--gap)}
+.step.s-todo{border-style:dashed}.step.s-todo .tt{color:var(--muted);font-weight:500}
+.endnode{border:2px solid var(--fg);border-radius:6px;padding:10px 8px;text-align:center;font-size:12.5px;margin-top:66px;background:var(--surface)}
+.endnode b{display:block;font:700 14px var(--display)}
+.mlegend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);padding:10px 18px;border-top:1px solid var(--line)}
+.mlegend span{display:inline-flex;gap:5px;align-items:center}
+.mlegend .step{width:20px;height:20px;padding:0;display:inline-grid;grid-template-columns:none;place-items:center;font-size:12px;font-weight:700;border-radius:4px}
+.mlegend .step .g{grid-row:auto}
+.tracks{padding:14px 18px 16px;border-top:1px solid var(--line)}
+.track{display:grid;grid-template-columns:150px repeat(6,minmax(0,1fr));gap:4px;align-items:center;margin-top:6px;font-size:12.5px}
+.track .seg2{height:22px;border-radius:3px;display:grid;place-items:center;font-size:11px;font-weight:600;border:1px solid var(--line);color:var(--muted);overflow:hidden;white-space:nowrap}
+.track .seg2.s-done{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.track .seg2.s-prog{border-color:var(--accent);color:var(--accent)}
+.track .seg2.s-block{background:var(--gap-soft);border-color:var(--gap);color:var(--gap)}
+.track .seg2.s-queued{border:1px dashed var(--gap);color:var(--gap)}
+.pill2{font-size:12px;font-weight:600;border-radius:5px;padding:2px 9px;white-space:nowrap}
+.pill2.s-done{background:var(--accent-soft);color:var(--accent)}.pill2.s-prog{border:1px solid var(--accent);color:var(--accent)}
+.pill2.s-wait{background:var(--warn-soft);color:var(--warn)}.pill2.s-decide{background:var(--cite-soft);color:var(--cite)}
+.pill2.s-block,.pill2.s-queued{background:var(--gap-soft);color:var(--gap)}.pill2.s-todo{border:1px dashed var(--line);color:var(--muted)}
+.why{border-left:3px solid var(--gap);padding:4px 0 4px 12px;font-size:13.5px}
+.why.soft{border-color:var(--warn)}
+.dl2{display:grid;gap:10px;margin:0;font-size:13.5px}
+.dl2 dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.dl2 dd{margin:2px 0 0}
+/* rail */
+.rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px)}
+.meter{display:flex;gap:3px;margin:10px 0 6px}
+.meter i{flex:1;height:10px;border-radius:2px;background:var(--sunk);border:1px solid var(--line)}
+.meter i.proven,.meter i.confirmed{background:var(--accent);border-color:var(--accent)}
+.meter i.waiting{background:var(--warn);border-color:var(--warn)}
+.meter i.conflict{background:var(--gap);border-color:var(--gap)}
+.big{font:700 28px var(--display);line-height:1.1}
+.block{display:block;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:transparent;padding:11px 18px;font-size:13.5px}
+button.block:hover{background:var(--sunk)}
+.block b{display:block;font-weight:600}
+.block .k{font:500 12px var(--mono);color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;font-size:13.5px;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:600;text-align:right}
+
+/* grid view */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;margin-bottom:16px}
+.field{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;min-width:0}
+.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:7px 9px;font-weight:400;max-width:100%;width:100%}
+.band{display:grid;grid-template-columns:minmax(110px,1fr) minmax(0,2fr);gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:end}
+.band:last-of-type{border-bottom:0}
+.words{background:var(--sunk);border-radius:6px;padding:11px 14px;margin-top:12px}
+.try{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.result{border-radius:6px;padding:11px 14px;font-weight:600;margin-top:12px}
+.result.pass{background:var(--accent-soft);color:var(--accent)}
+.result.fail{background:var(--gap-soft);color:var(--gap)}
+.result small{display:block;font-weight:400;margin-top:2px}
+.scroll-x{overflow-x:auto}
+.ag{border-collapse:collapse;width:100%;font-size:13px;min-width:640px}
+.ag th,.ag td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:center;vertical-align:middle}
+.ag th.acc,.ag td.acc{text-align:left;white-space:nowrap}
+.ag thead th{font-weight:600;font-size:12.5px;vertical-align:bottom}
+.ag thead th small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+.ag thead label{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.ag .ent td{background:var(--sunk);text-align:left;font-weight:600;font-size:12.5px}
+.ag tr.sel td{background:var(--accent-soft)}
+.ag td.acc button{border:0;background:transparent;padding:0;text-align:left;font-weight:500}
+.ag td.acc small{color:var(--muted);font-family:var(--mono);font-size:11.5px}
+.c{display:inline-grid;place-items:center;min-width:26px;height:24px;border-radius:4px;font:600 12px var(--mono);padding:0 5px}
+.c.ok{background:var(--accent);color:var(--on-accent)}
+.c.prep{border:1px solid var(--line);color:var(--muted);font-family:var(--body);font-weight:500;font-size:11.5px}
+.c.none{color:var(--muted)}
+.c.blocked{background:repeating-linear-gradient(135deg,var(--gap-soft) 0 5px,transparent 5px 9px);border:1px solid var(--gap);color:var(--gap);font-family:var(--body);font-size:11.5px}
+.c.unproven{border:1.5px dashed var(--gap);color:var(--gap);font-family:var(--body);font-size:11.5px}
+.c.pending{border:1.5px dashed var(--warn);color:var(--warn);font-family:var(--body);font-size:11.5px}
+.c.counted{outline:2px solid var(--fg);outline-offset:1px}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;gap:5px;align-items:center}
+
+/* request */
+.reqgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,360px);gap:18px;align-items:start}
+.reason{padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.reason b{font-weight:600}
+.merge{font-size:13px;color:var(--muted);padding:8px 0 0}
+.flow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
+.flow span{border:1px solid var(--line);border-radius:4px;padding:2px 9px}
+.flow span.on{background:var(--accent-soft);color:var(--accent);border-color:transparent;font-weight:600}
+.note{border-radius:6px;padding:11px 14px;font-size:13.5px}
+.note.ok{background:var(--accent-soft);color:var(--accent)}
+.phone{border:2px solid var(--fg);border-radius:26px;padding:14px 12px 18px;background:var(--surface)}
+.phone .bar{width:60px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.plist{list-style:none;margin:10px 0;padding:0}
+.plist li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;padding:5px 0;font-size:13.5px;align-items:start}
+.plist .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);margin-top:3px}
+.plist .d .dot{background:var(--accent);border-color:var(--accent)}
+.plist .n .dot{border-color:var(--warn);background:var(--warn-soft)}
+.plist small{display:block;color:var(--muted);font-size:12px}
+.ask{border:1px solid var(--warn);background:var(--warn-soft);border-radius:8px;padding:12px;margin-top:6px}
+.ask h4{margin-bottom:4px}
+.ask p{font-size:13.5px;overflow-wrap:anywhere}
+
+/* builder */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.tile .kvs{display:flex;gap:6px 16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:6px}
+.tile .kvs b{color:var(--fg)}
+.bt{border-collapse:collapse;width:100%;font-size:13.5px;min-width:860px}
+.bt th,.bt td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.bt th{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.bt select{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:5px 6px;font-size:13px;width:100%}
+.bt select.off{color:var(--muted);background:var(--sunk)}
+.bt .ln td{background:var(--sunk);font-weight:600;font-size:12.5px}
+.bt td small{color:var(--muted);display:block}
+#export{width:100%;min-height:180px;font:400 12.5px var(--mono);border:1px solid var(--line);border-radius:6px;background:var(--sunk);padding:12px}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:7px;font-weight:600;z-index:50;max-width:calc(100% - 32px)}
+.concept{font-size:12.5px;color:var(--muted);margin-top:22px;max-width:90ch}
+@media(max-width:940px){.mapwrap,.rec,.two,.reqgrid{grid-template-columns:minmax(0,1fr)}.rail{position:static}.tiles{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.pair{grid-template-columns:minmax(0,1fr)}.pair>div+div{border-left:0;border-top:1px solid var(--line)}.clause{grid-template-columns:28px minmax(0,1fr);padding:16px 14px 16px 6px}.band{grid-template-columns:minmax(0,1fr)}.seg{width:100%}.seg button{flex:1 1 30%}.sheet-h{padding:16px 14px}}
+</style>
+
+<div class="app">
+  <div class="top">
+    <div class="brand"><div class="mark" aria-hidden="true">§</div><div><h1>Mandate Journey Workspace</h1><div class="eyebrow">Stated against proven · concept with fictional customers</div></div></div>
+    <div class="seg" role="radiogroup" aria-label="Customer segment" id="seg"></div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Views" id="tabs"></nav>
+  <main>
+    <section id="view-map"></section>
+    <section id="view-record" hidden></section>
+    <section id="view-grid" hidden></section>
+    <section id="view-request" hidden></section>
+    <section id="view-builder" hidden></section>
+  </main>
+  <p class="concept">A design concept. Customers, people and documents are invented. Nothing here submits, signs or activates anything. The idea: a mandate is a set of statements about who may act, and the bank's job is to prove each one. The screen is the mandate, and progress is how much of it is proven.</p>
+</div>
+<div id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function low(t){return t.charAt(0).toLowerCase()+t.slice(1)}
+function gbp(n){return '£'+Number(n).toLocaleString('en-GB')}
+/* rich text: **bold**, ~~wider than source~~, [[label|source]] */
+function rich(s,cl){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/~~(.+?)~~/g,'<span class="over">$1</span>').replace(/\[\[(.+?)\|(.+?)\]\]/g,function(m,l,k){var o=S.open[S.seg],open=o&&o.cl===cl&&o.src===k;return '<button class="cite" data-src="'+k+'" data-cl="'+cl+'" aria-expanded="'+!!open+'">'+l+'</button>'})}
+
+/* ---------- catalogue of steps; cl = the clause each step serves ---------- */
+var STAGES=[['entity','Entity and capacity'],['people','People and signers'],['rule','Signing rule'],['evidence','Evidence of authority'],['sign','Sign and approve'],['live','Activate and enforce']];
+var MODES={off:'Not in this journey',auto:'Straight through',agent:'Agent prepares, person decides',person:'Person-led'};
+var MSHORT={auto:'straight through',agent:'agent, then person',person:'person-led'};
+var SEGS={bb:['Business Banking','Simple companies and sole traders'],cm:['Commercial','Classes, bands, several accounts'],cp:['Corporate','Groups, delegation, jurisdictions']};
+var SI={bb:0,cm:1,cp:2};
+var CAT=[
+ {id:'e1',line:'entity',cl:'holder',t:'Identify the holder',what:'Find the legal holder in the company registry and match its people against existing customer records.',ref:'Starling registry check; Citi request workspace (E21)',m:['auto','auto','agent']},
+ {id:'e2',line:'entity',cl:'accounts',t:'Accounts in scope',what:'Choose which entities and accounts this mandate covers. Everything else is out of scope and says so.',ref:'Citi account mirroring (E22)',m:['off','auto','agent']},
+ {id:'e3',line:'entity',cl:'holder',t:'Capacity abroad',what:'For an entity registered overseas, confirm the legal form, who represents it and whether a legal opinion is needed.',ref:'UK banks ask overseas businesses for a legal opinion',m:['off','off','person']},
+ {id:'p1',line:'people',cl:'signers',t:'Propose signers',what:'Start from the registry\'s directors and officers. The customer confirms a list instead of typing one.',ref:'Citi signer reuse (E16); Cygnetise signer record (E02)',m:['auto','auto','agent']},
+ {id:'p2',line:'people',cl:'signers',t:'Classes and limits',what:'Give each signer a class and, where needed, a personal limit and validity dates.',ref:'RBS International form (E19, E20); Cygnetise (E02)',m:['off','agent','agent']},
+ {id:'p3',line:'people',cl:'signers',t:'Verify identity',what:'Each signer completes their own identity check on their own phone.',ref:'Fenergo authentication (E10); UK banks ask for a passport or driving licence',m:['auto','auto','auto']},
+ {id:'p4',line:'people',cl:'signers',t:'Screen',what:'Screen each person and the entity. Only a person closes a match.',ref:'Common practice; Botminds describes the same rule',m:['auto','agent','agent']},
+ {id:'r1',line:'rule',cl:'rule',t:'Choose the rule',what:'Say who must approve. Simple businesses pick a template. Larger ones build bands by amount and signer class.',ref:'Revolut and Mercury (E01); Ramp amount tiers',m:['auto','agent','agent']},
+ {id:'r2',line:'rule',cl:'rule',t:'Test the rule',what:'Try a payment amount and a set of approvers and see whether it passes, before anyone signs.',ref:'Blueprint concept. No reviewed product shows a rule test.',m:['off','auto','auto']},
+ {id:'r3',line:'rule',cl:'rule',t:'Check the constitution',what:'Compare the stated rule with the registry, articles and resolution. The customer\'s statement cannot be wider than those documents.',ref:'Botminds registry check; Suomi.fi joint validation',m:['auto','agent','agent']},
+ {id:'r4',line:'rule',cl:'deleg',t:'Delegated authority',what:'Record powers of attorney and delegations: who granted them, to whom, for which accounts and until when.',ref:'Suomi.fi mandate status and validity; Cygnetise dates (E02)',m:['off','off','agent']},
+ {id:'v1',line:'evidence',cl:'rule',t:'Collect evidence',what:'Ask only for documents the registry cannot supply: a resolution, a signatory list, a trust deed.',ref:'Citi specimen upload (E23); Transactionlink (E13, E14)',m:['off','agent','agent']},
+ {id:'v2',line:'evidence',cl:'rule',t:'Read and cite',what:'Extract each signer and authority with a pointer to the page. Below 95% confidence a person reads first.',ref:'Botminds documents (E07); Fenergo Document Agent',m:['off','agent','agent']},
+ {id:'v3',line:'evidence',cl:'rule',t:'One request',what:'Merge every open problem into one plain request to the customer. One person approves; a different person sends.',ref:'Botminds client request (E08)',m:['off','agent','person']},
+ {id:'s1',line:'sign',cl:'adopt',t:'Generate mandate',what:'Produce the mandate document from the proven record, never the other way round.',ref:'Citi submit and generate (E24); Fenergo (E12)',m:['auto','auto','auto']},
+ {id:'s2',line:'sign',cl:'adopt',t:'Signers sign',what:'The people the constitution requires sign electronically, each on their own device.',ref:'Citi signer execution and decline (E25, E26); Fenergo (E09, E11)',m:['auto','auto','auto']},
+ {id:'s3',line:'sign',cl:'adopt',t:'Independent approval',what:'A bank colleague who did not prepare the case approves it. Simple cases can be approved by policy.',ref:'Mercury dual admin approval',m:['auto','person','person']},
+ {id:'s4',line:'sign',cl:'adopt',t:'Call-back',what:'Confirm high-risk changes by phone on a number taken from an independent source.',ref:'Standard fraud control; Botminds applies it to bank details',m:['off','off','person']},
+ {id:'a1',line:'live',cl:'live',t:'Activate version',what:'Make the new version live once every downstream system acknowledges it. The old version stays active until then.',ref:'No reviewed screen. Backbase decision token (text).',m:['auto','auto','agent']},
+ {id:'a2',line:'live',cl:'live',t:'Align channel access',what:'Bring online-banking users and payment approval settings into line with the mandate.',ref:'Backbase entitlement agent; HSBC notes that mandate and portal access differ',m:['off','agent','agent']},
+ {id:'a3',line:'live',cl:'live',t:'Enforce at payment',what:'Every instruction is checked against the live mandate. Missing authority holds the instruction and says why.',ref:'Temenos minimum signatories; Cedar or OpenFGA',m:['auto','auto','auto']},
+ {id:'a4',line:'live',cl:'live',t:'Review triggers',what:'Reopen the mandate when a director changes at the registry, a delegation expires or a signer leaves.',ref:'Cygnetise history (E04); Suomi.fi sends no expiry reminders, a gap to avoid',m:['auto','auto','agent']}
+];
+var COMBO={'1A':'Any one class A signer','2ANY':'Any two signers, class A or B','1A1B':'One class A with one more, class A or B','2A':'Two class A signers'};
+var PROOF={proven:'Proven',confirmed:'Confirmed by customer',waiting:'Waiting',conflict:'Does not match the source',later:'Follows'};
+
+/* ---------- state ---------- */
+var S={seg:'cm',view:'map',sel:{},jump:null,cfg:{},bands:{},choice:{},open:{},lang:'orig',req:{},actor:{},draft:{},test:{}};
+function defaults(){CAT.forEach(function(c){S.cfg[c.id]=c.m.slice()})}
+defaults();
+try{var sv=JSON.parse(localStorage.getItem('mjw-v2')||'null');if(sv){if(sv.cfg)CAT.forEach(function(c){if(sv.cfg[c.id]&&sv.cfg[c.id].length===3)S.cfg[c.id]=sv.cfg[c.id]});if(SEGS[sv.seg])S.seg=sv.seg}}catch(e){}
+function save(){try{localStorage.setItem('mjw-v2',JSON.stringify({cfg:S.cfg,seg:S.seg}))}catch(e){}}
+function mode(id,seg){return S.cfg[id][SI[seg||S.seg]]}
+function active(seg){return CAT.filter(function(c){return mode(c.id,seg)!=='off'})}
+function ch(seg){var v=S.choice[seg||S.seg];return v==null?-1:v}
+function toast(t){var el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){el.hidden=true},3800)}
+
+/* ---------- the three cases ---------- */
+var C={
+bb:{name:'Harbour Lane Bakery Ltd',tags:[['Private limited company'],['1 account','GBP current']],day:2,of:5,target:'Thu 19 Nov',goal:'first payroll run',safe:'Priya verified by Tue 17 Nov',
+ base:[[10000,'1A'],[null,'2A']],
+ allSigners:[['Daniel Reyes','A','Director'],['Priya Nair','A','Director']],
+ signers:function(){return ch('bb')===2?this.allSigners.slice(0,1):this.allSigners},
+ accounts:[['Harbour Lane Bakery Ltd','GBP current','••4471']],
+ cell:function(ent,n){return n==='Priya Nair'?['pending','has not finished the identity check']:['ok','']},
+ src:{ch:{t:'Companies House record',f:'Registry lookup, 13 Nov. Read twice by separate agents; both readings agree.',orig:['Company: <mark>HARBOUR LANE BAKERY LTD</mark> · Active','Officers: <mark>REYES, Daniel · Director</mark> · appointed 4 Mar 2019','<mark>NAIR, Priya · Director</mark> · appointed 4 Mar 2019','Articles: Model articles (private company limited by shares)']}},
+ clauses:function(){var k=ch('bb'),solo=k===2;return [
+  {k:'holder',t:'Account holder',s:'proven',claim:'Harbour Lane Bakery Ltd, a private limited company.',proof:'Active at Companies House, number 09481265 [[Registry|ch]].'},
+  {k:'signers',t:'Who can sign',s:solo?'proven':'waiting',claim:solo?'Daniel Reyes, director. Priya Nair to be added later.':'Daniel Reyes and Priya Nair, both directors.',proof:solo?'Daniel Reyes is a director [[Registry|ch]] and passed his identity check on 13 Nov.':'Both are directors [[Registry|ch]]. Daniel passed his identity check on 13 Nov. **Priya opened her link but stopped at the selfie step.**',
+   opts:['Priya\'s identity check is the only thing outstanding.',[['Remind Priya','19 Nov holds if she finishes by 17 Nov','Three minutes on her phone','Nothing else changes.','Reminder sent to Priya Nair by text and email.'],['Offer a video call','19 Nov holds','Priya picks a slot','A colleague verifies her on the call.','Video call offered to Priya Nair.'],['Open with Daniel only','19 Nov holds','Nothing now','Daniel signs alone on every payment. Priya is added later as a mandate change.','Draft changed: Daniel Reyes is the only signer.']]]},
+  {k:'rule',t:'Signing rule',s:'proven',claim:ruleWords('bb').join(' '),proof:solo?'A sole director may act alone under the model articles [[Registry|ch]].':'Model articles; both directors adopt this rule by signing the mandate [[Registry|ch]].'},
+  {k:'adopt',t:'How this mandate is adopted',s:'later',single:solo?'Daniel Reyes signs on his phone. Policy approves it; no colleague is involved unless a check fails.':'Both directors sign on their phones once Priya is verified. Policy approves it; no colleague is involved unless a check fails.'},
+  {k:'live',t:'Where it is enforced',s:'later',single:'App and online payments are checked against this mandate from the first instruction.'}]},
+ req:{auto:true,reasons:[['Identity check unfinished','Priya Nair stopped at the selfie step on 13 Nov.']],steps:[['Business confirmed','13 Nov','d'],['Signing rule chosen','13 Nov','d'],['Identity checks','1 of 2 done','n'],['Sign the mandate','',''],['Account ready','Planned Thu 19 Nov','']],subject:'Priya, please finish your identity check',body:'It takes about three minutes on your phone. Once it is done, you and Daniel can both sign and the account will be ready for 19 November.',cta:'Continue identity check'}},
+cm:{name:'Calder Valley Engineering Ltd',tags:[['Private limited company'],['4 accounts','GBP ×3, EUR']],day:6,of:15,target:'Fri 27 Nov',goal:'supplier payment run',safe:'New resolution by Mon 23 Nov',
+ base:[[25000,'1A'],[250000,'2ANY'],[null,'2A']],
+ allSigners:[['Helen Whitaker','A','Director'],['Sajid Iqbal','A','Director'],['Maeve Brennan','A','Director'],['Li Zhou','A','Director'],['Tom Okafor','B','Finance Controller']],
+ signers:function(){return ch('cm')===1?this.allSigners.slice(0,4):this.allSigners},
+ accounts:[['Calder Valley Engineering Ltd','GBP operating','••1048'],['Calder Valley Engineering Ltd','GBP payroll','••1055'],['Calder Valley Engineering Ltd','GBP tax reserve','••1063'],['Calder Valley Engineering Ltd','EUR operating','••2210']],
+ cell:function(ent,n){return n==='Tom Okafor'?['unproven','is not proven as a signer: he is not a director and no resolution delegates to him']:['ok','']},
+ src:{res:{t:'Board resolution, 3 October 2026',f:'Two pages, received 10 Nov. Read twice by separate agents; both readings agree.',orig:['RESOLVED that the Company open and operate accounts with the Bank.','RESOLVED that <mark>any two directors acting jointly</mark> be authorised to give instructions on the accounts.','Page 2. Authorised signatories: <mark>H. Whitaker, S. Iqbal, M. Brennan, L. Zhou (Directors)</mark>.']},
+  ch:{t:'Companies House record',f:'Registry lookup, 9 Nov.',orig:['Company: CALDER VALLEY ENGINEERING LTD · Active','Officers: <mark>WHITAKER, Helen · Director</mark>; <mark>IQBAL, Sajid · Director</mark>; <mark>BRENNAN, Maeve · Director</mark>; <mark>ZHOU, Li · Director</mark>','FIELDING, Ruth · Secretary','No officer named Okafor.']}},
+ clauses:function(){var k=ch('cm'),narrow=k===1,b=bands('cm'),sole=b.some(function(x){return x[1]==='1A'});
+  var words=ruleWords('cm').map(function(w,i){return b[i][1]==='1A'?'~~'+w+'~~':w}).join(' ');
+  return [
+  {k:'holder',t:'Account holder',s:'proven',claim:'Calder Valley Engineering Ltd, a private limited company.',proof:'Active at Companies House [[Registry|ch]].'},
+  {k:'accounts',t:'Accounts covered',s:'confirmed',single:'Four accounts: GBP operating, GBP payroll, GBP tax reserve and EUR operating. No other account is covered by this mandate.'},
+  {k:'signers',t:'Who can sign',s:narrow?'waiting':'conflict',claim:narrow?'Class A: Helen Whitaker, Sajid Iqbal, Maeve Brennan, Li Zhou. Tom Okafor to be added later.':'Class A: Helen Whitaker, Sajid Iqbal, Maeve Brennan, Li Zhou. Class B: ~~Tom Okafor, Finance Controller~~.',proof:'The four class A signers are directors [[Registry|ch]] and are named in the resolution [[Resolution p.2|res]]. '+(narrow?'':'**Tom Okafor is not a director and the resolution delegates nothing to him** [[Resolution p.2|res]]. ')+'Identity: '+(narrow?'4 of 4':'4 of 5')+' verified. Screening: one possible name match for Maeve Brennan is with an analyst.',
+   diff:narrow?'':'One stated signer has no source behind him. The options are under clause 4.'},
+  {k:'rule',t:'Signing rule',s:(sole&&!narrow)?'conflict':'proven',claim:words,proof:'Resolution of 3 October: **any two directors acting jointly**. It grants no sole signing and sets no limits by amount [[Resolution p.1|res]].',
+   diff:(sole&&!narrow)?'**Wider than the source.** The customer states one signer alone up to '+gbp(b[0][0]||0)+'. The resolution requires two.':'',
+   opts:['Three ways to settle clauses 3 and 4.',[['Ask for a new resolution','27 Nov holds if it arrives by 23 Nov','One board resolution','The rule stays as the customer wants it. Tom Okafor gains class B authority.','go:request'],['Go live on what is proven','27 Nov holds','Nothing now','Two directors on every payment. Sole signing and Tom Okafor follow as a mandate change.','Draft changed to what the resolution proves: two directors on every payment.'],['Wait','27 Nov at risk after 23 Nov','Nothing asked','The customer is not told why the accounts are late.','No change. The customer has not been contacted.']]]},
+  {k:'adopt',t:'How this mandate is adopted',s:'later',single:narrow?'Any two directors sign electronically. A colleague who did not prepare the case approves.':'Cannot be generated until clauses 3 and 4 match their sources. Then any two directors sign and a colleague who did not prepare the case approves.'},
+  {k:'live',t:'Where it is enforced',s:'later',single:'Online banking users and payment approval settings are brought into line with the mandate; a person on each side signs off. Every instruction is then checked against it.'}]},
+ req:{reasons:[['Rule wider than the resolution','Sole signing to £25,000 is not in the resolution of 3 Oct.'],['Signer without a source','Tom Okafor is not a director and has no delegation.'],['Signatory list out of date','It was certified against the old resolution.']],steps:[['Business and accounts confirmed','9 Nov','d'],['Signers and classes','10 Nov','d'],['Documents received','10 Nov','d'],['Signing rule','We need one document','n'],['Sign the mandate','',''],['Accounts ready','Planned Fri 27 Nov','']],subject:'One document to finish your account set-up',body:'Please send a board resolution that lets one director sign alone up to £25,000 and authorises Tom Okafor as a signer. If we have it by Monday 23 November, your accounts stay on track for 27 November.',cta:'Upload resolution',people:['Jon Bell · Onboarding Manager','Amara Osei · Relationship Director']}},
+cp:{name:'Northstar Industries plc',tags:[['Group of 3 entities','UK and Netherlands'],['14 accounts','GBP, EUR, USD']],day:12,of:30,target:'Tue 15 Dec',goal:'treasury go-live',safe:'Power of attorney re-signed by Fri 4 Dec',
+ base:[[50000,'2ANY'],[1000000,'1A1B'],[null,'2A']],
+ allSigners:[['Eleanor Marsh','A','plc Director'],['Raj Patel','A','Group Treasurer'],['Ingrid Holm','B','Treasury Manager'],['Carlos Mendes','B','Treasury Manager'],['Mia Chen','C','Treasury Analyst'],['Sanne de Vries','A','B.V. Director'],['Pieter Jansen','A','B.V. Director']],
+ signers:function(){return this.allSigners},
+ accounts:[['Northstar Industries plc','GBP operating','••3001'],['Northstar Industries plc','GBP payroll','••3002'],['Northstar Industries plc','GBP collections','••3003'],['Northstar Industries plc','USD operating','••3104'],['Northstar Industries plc','EUR operating','••3205'],['Northstar Industries plc','GBP deposits','••3006'],['Northstar Treasury Ltd','GBP pool header','••4001'],['Northstar Treasury Ltd','EUR pool header','••4202'],['Northstar Treasury Ltd','USD pool header','••4103'],['Northstar Treasury Ltd','GBP FX settlement','••4004'],['Northstar Treasury Ltd','EUR FX settlement','••4205'],['Northstar Benelux B.V.','EUR operating','••5201'],['Northstar Benelux B.V.','EUR payroll','••5202'],['Northstar Benelux B.V.','USD operating','••5103']],
+ cell:function(ent,n){var bv=/B\.V\./.test(ent),plc=/plc/.test(ent),drop=ch('cp')===1;
+  if(n==='Eleanor Marsh')return plc?['ok','']:['none','has no authority on this account'];
+  if(n==='Sanne de Vries'||n==='Pieter Jansen')return bv?['ok','']:['none','has no authority on this account'];
+  if(n==='Mia Chen')return bv?['none','has no authority on this account']:['prep','is class C and can prepare only'];
+  if(bv)return drop?['none','has no authority on this account']:['blocked','cannot act for the B.V.: its power of attorney has one signature of two'];
+  return ['ok',plc?'by power of attorney to 24 Dec':''];},
+ src:{kvk:{t:'Dutch trade register extract, page 2',f:'Registry lookup, 2 Nov. Read in Dutch by two separate agents; both readings agree. Reviewed by the entity specialist on 6 Nov.',orig:['Naam: Vries, de, Sanne · Titel: Bestuurder','Bevoegdheid: <mark>Gezamenlijk bevoegd (met andere bestuurder(s))</mark>','Naam: Jansen, Pieter · Titel: Bestuurder','Bevoegdheid: <mark>Gezamenlijk bevoegd (met andere bestuurder(s))</mark>','Gevolmachtigden: <mark>Geen gevolmachtigden ingeschreven</mark>'],en:['Name: de Vries, Sanne · Title: Director','Authority: <mark>Jointly authorised (with other director(s))</mark>','Name: Jansen, Pieter · Title: Director','Authority: <mark>Jointly authorised (with other director(s))</mark>','Proxy holders: <mark>No proxy holders registered</mark>']},
+  poa:{t:'Powers of attorney, pages 1 and 3',f:'Four pages, received 6 Nov. Read twice by separate agents; both readings agree.',orig:['Page 1. Northstar Industries plc appoints Northstar Treasury Ltd as attorney for the accounts in Schedule 1. <mark>Signed by E. Marsh and R. Patel, Directors.</mark> Valid to 24 December 2026.','Page 3. Northstar Benelux B.V. appoints Northstar Treasury Ltd as attorney for the accounts in Schedule 2. <mark>Signed by S. de Vries, Director.</mark> Second signature: blank.']}},
+ clauses:function(){var k=ch('cp'),drop=k===1;return [
+  {k:'holder',t:'Account holders',s:'proven',claim:'Northstar Industries plc, Northstar Treasury Ltd (both UK) and Northstar Benelux B.V. (Netherlands).',proof:'All three are active. The B.V. was read in Dutch [[Trade register p.2|kvk]] and its capacity confirmed by the entity specialist.'},
+  {k:'accounts',t:'Accounts covered',s:'confirmed',single:'Fourteen accounts: six for the plc, five for Treasury Ltd, three for the B.V. One mandate version per entity.'},
+  {k:'signers',t:'Who can sign',s:'waiting',claim:'Seven people in three classes. Class A and B approve; class C prepares only. Who may act on which account is in the authority grid.',proof:'Roles match the registers and the group signatory list. Identity: 6 of 7 verified; Pieter Jansen is booked for 18 Nov. Screening is clear.'},
+  {k:'rule',t:'Signing rule',s:'proven',claim:ruleWords('cp').join(' '),proof:'Within the plc\'s articles and the treasury policy the board adopted. The B.V.\'s own accounts keep its register rule: two directors jointly [[Trade register p.2|kvk]].'},
+  {k:'deleg',t:'Delegations',s:drop?'proven':'conflict',claim:drop?'The plc delegates its six accounts to Northstar Treasury Ltd, to 24 December 2026. The B.V. delegation is left out of version 1.':'The plc delegates its six accounts to Northstar Treasury Ltd, to 24 December 2026. ~~The B.V. delegates its three accounts to Northstar Treasury Ltd.~~',proof:'plc grant: signed by two directors, valid [[Power of attorney p.1|poa]]. It ends nine days after go-live.'+(drop?'':' **B.V. grant: one signature where the register requires two** [[Power of attorney p.3|poa]] [[Trade register p.2|kvk]].'),
+   diff:drop?'':'**Not binding.** The B.V.\'s two directors may only act together, and only one signed. The other eleven accounts are unaffected.',
+   opts:['Three ways to settle clause 5.',[['Ask for a re-signed document','15 Dec holds for all 14 accounts if it arrives by 4 Dec','Both B.V. directors sign; extend the plc grant in the same letter','Treasury operates every account from day one.','go:request'],['Go live without the B.V. delegation','15 Dec holds for all 14 accounts','Nothing now','The B.V.\'s two directors approve its payments jointly. Treasury takes over in version 1.1.','Draft changed: the B.V. delegation is left out of version 1.'],['Wait','15 Dec at risk after 4 Dec','Nothing asked','Go-live slips for the whole group.','No change. The customer has not been contacted.']]]},
+  {k:'adopt',t:'How this mandate is adopted',s:'waiting',single:'Each entity signs its own pack as its constitution requires. Two of three packs are generated. A colleague who did not prepare the case approves, after a call-back to Group Treasury on a number from our own records.'},
+  {k:'live',t:'Where it is enforced',s:'later',single:'Portal roles and payment approval settings are drafted from the mandate and signed off on both sides. Each entity\'s version goes live when every channel acknowledges it.'}]},
+ req:{reasons:[['B.V. power of attorney not binding','One signature; the trade register requires two.'],['plc power of attorney ends soon','Valid to 24 Dec, nine days after go-live.']],steps:[['Group and accounts confirmed','3 Nov','d'],['Signers and classes','5 Nov','d'],['Signing rule tested','5 Nov','d'],['Documents received','6 Nov','d'],['Delegations','We need one thing','n'],['Sign the mandates','',''],['Treasury go-live','Planned Tue 15 Dec','']],subject:'One thing we need for your 15 December go-live',body:'Please send the power of attorney for Northstar Benelux B.V. signed by both directors, Sanne de Vries and Pieter Jansen. In the same reply, please extend the plc power of attorney, which ends on 24 December. If we have both by Friday 4 December, all 14 accounts go live on 15 December.',cta:'Upload documents',people:['Jon Bell · Onboarding Manager','Amara Osei · Relationship Director']}}
+};
+function bands(seg){seg=seg||S.seg;if(!S.bands[seg])S.bands[seg]=C[seg].base.map(function(b){return b.slice()});return S.bands[seg]}
+function ruleWords(seg){var b=bands(seg),prev=0;return b.map(function(x,i){var t=(x[0]==null?(b.length===1?'Any amount':'Above '+gbp(prev)):(i===0?'Up to '+gbp(x[0]):gbp(prev)+' to '+gbp(x[0])))+': '+low(COMBO[x[1]])+'.';if(x[0]!=null)prev=x[0];return t})}
+function applyChoice(seg,i){S.choice[seg]=i;S.bands[seg]=null;
+ if(seg==='bb'&&i===2)S.bands.bb=[[null,'1A']];
+ if(seg==='cm'&&i===1)S.bands.cm=[[null,'2A']];}
+
+/* ---------- shell ---------- */
+var VIEWS=[['map','Journey map'],['record','Mandate record'],['grid','Authority grid'],['request','Customer request'],['builder','Journey builder']];
+function drawShell(){
+ $('#seg').innerHTML=Object.keys(SEGS).map(function(k){return '<button role="radio" aria-checked="'+(k===S.seg)+'" data-seg="'+k+'"><b>'+SEGS[k][0]+'</b><small>'+SEGS[k][1]+'</small></button>'}).join('');
+ $('#tabs').innerHTML=VIEWS.map(function(v){return '<button role="tab" aria-selected="'+(v[0]===S.view)+'" data-view="'+v[0]+'">'+v[1]+'</button>'}).join('');
+ VIEWS.forEach(function(v){$('#view-'+v[0]).hidden=v[0]!==S.view});
+}
+
+/* ---------- journey map ---------- */
+var SL={done:'Done',prog:'In progress',wait:'Waiting on customer',decide:'Needs a person',block:'Does not match source',queued:'Waits behind a block',todo:'Not started'};
+var SG={done:'✓',prog:'◐',wait:'…',decide:'◆',block:'≠',queued:'‖',todo:'○'};
+var HM={auto:'auto',agent:'agent → person',person:'person'};
+var ST={
+ bb:{e1:['done','Registry · 13 Nov'],p1:['done','13 Nov'],p3:['wait','Priya Nair · since 13 Nov'],p4:['done','13 Nov'],r1:['done','Daniel Reyes · 13 Nov'],r3:['done','13 Nov'],s1:['queued','Waits for identity']},
+ cm:{e1:['done','Registry · 9 Nov'],e2:['done','9 Nov'],p1:['done','9 Nov'],p2:['done','10 Nov'],p3:['prog','4 of 5 verified'],p4:['decide','Analyst · 1 name match'],r1:['done','10 Nov'],r2:['done','10 Nov'],r3:['block','Rule wider than resolution'],v1:['done','Received 10 Nov'],v2:['done','11 Nov'],v3:['decide','Draft ready to approve'],s1:['queued','Waits for the rule check']},
+ cp:{e1:['done','2 Nov'],e2:['done','3 Nov'],e3:['done','Specialist · 6 Nov'],p1:['done','3 Nov'],p2:['done','5 Nov'],p3:['prog','6 of 7 verified'],p4:['done','9 Nov'],r1:['done','5 Nov'],r2:['done','5 Nov'],r3:['done','9 Nov'],r4:['block','B.V. grant: 1 of 2 signatures'],v1:['done','Received 6 Nov'],v2:['done','9 Nov'],v3:['decide','Draft ready to approve'],s1:['prog','2 of 3 packs · B.V. waits'],a2:['prog','Roles drafted']}};
+var BLOCKS={bb:{p3:['s1']},cm:{r3:['s1']},cp:{r4:['s1']}};
+var WHY={
+ bb:{p3:'Priya opened her identity link but stopped at the selfie step. Both directors must be verified before the mandate can be generated.'},
+ cm:{r3:'The customer states one signer alone up to £25,000. The resolution of 3 October requires two directors, and it delegates nothing to Tom Okafor.',p4:'One possible name match for Maeve Brennan. Only an analyst can close it. It does not stop any other step.',v3:'Three findings are merged into one request. One person approves it; a different person sends it.'},
+ cp:{r4:'The B.V. power of attorney has one signature; the Dutch register requires both directors. Only the B.V.\'s three accounts are affected.',v3:'The B.V. document and the plc renewal go to Group Treasury as one request.',s1:'Packs for the plc and Treasury Ltd are generated. The B.V. pack waits for a binding delegation.'}};
+var TRACKS={cp:[['Northstar Industries plc',['done','prog','done','done','prog','todo']],['Northstar Treasury Ltd',['done','prog','done','done','prog','todo']],['Northstar Benelux B.V.',['done','prog','block','done','queued','todo']]]};
+function stepState(id){var seg=S.seg,k=ch(seg),b=(ST[seg][id]||['todo','']).slice();
+ if(seg==='bb'&&k===2){if(id==='p3')b=['done','Daniel only'];if(id==='s1')b=['prog','Generating']}
+ if(seg==='cm'&&k===1){if(id==='r3')b=['done','Matches the resolution'];if(id==='v3')b=['done','Not needed'];if(id==='s1')b=['prog','Generating']}
+ if(seg==='cp'&&k===1){if(id==='r4')b=['done','plc grant only'];if(id==='s1')b=['prog','3 packs']}
+ if(S.req[seg]==='sent'&&id==='v3'&&b[0]==='decide')b=['wait','Sent to the customer'];
+ return b}
+function blockPairs(){var o=BLOCKS[S.seg],out=[];Object.keys(o).forEach(function(a){var s=stepState(a)[0];if((s==='block'||s==='wait')&&mode(a)!=='off')o[a].forEach(function(b){if(mode(b)!=='off')out.push([a,b])})});return out}
+function drawLinks(){var f=$('#flow');if(!f)return;var old=$('svg.links',f);if(old)old.remove();var pairs=blockPairs();if(!pairs.length)return;
+ var fr=f.getBoundingClientRect(),d='';pairs.forEach(function(p){var a=$('[data-step="'+p[0]+'"]',f),b=$('[data-step="'+p[1]+'"]',f);if(!a||!b)return;var ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
+  var x1=ar.right-fr.left,y1=ar.top+ar.height/2-fr.top,x2=br.left-fr.left-7,y2=br.top+br.height/2-fr.top,mx=(x1+x2)/2;
+  d+='<path d="M'+x1+' '+y1+'C'+mx+' '+y1+' '+mx+' '+y2+' '+x2+' '+y2+'" fill="none" stroke="var(--gap)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arr)"/>'});
+ f.insertAdjacentHTML('afterbegin','<svg class="links" aria-hidden="true"><defs><marker id="arr" viewBox="0 0 8 8" refX="1" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" fill="var(--gap)"/></marker></defs>'+d+'</svg>')}
+function drawMap(){
+ var c=C[S.seg],act=active(),cnt=function(s){return act.filter(function(a){return stepState(a.id)[0]===s}).length};
+ var done=cnt('done'),blk=cnt('block'),q=cnt('queued'),wt=cnt('wait'),dc=cnt('decide');
+ if(!act.some(function(a){return a.id===S.sel[S.seg]})){var first=act.filter(function(a){var s=stepState(a.id)[0];return s==='block'||s==='wait'})[0]||act[0];S.sel[S.seg]=first&&first.id}
+ var h='<div class="mapwrap"><div class="card"><div class="card-h"><div><div class="eyebrow">'+SEGS[S.seg][0]+' · new mandate</div><h2>'+esc(c.name)+'</h2></div><div class="tags"><span>Day <b class="num">'+c.day+' of '+c.of+'</b></span><span>Target <b>'+c.target+'</b> · '+c.goal+'</span><span>Safe if <b>'+esc(c.safe)+'</b></span></div></div>';
+ h+='<div class="sum"><span class="num"><b>'+done+'</b> of '+act.length+' steps done</span><span class="pbar" aria-hidden="true"><i style="width:'+Math.round(done/Math.max(act.length,1)*100)+'%"></i></span>'+(blk?'<span><b>'+blk+'</b> does not match its source</span>':'')+(wt?'<span><b>'+wt+'</b> waiting on the customer</span>':'')+(q?'<span><b>'+q+'</b> waits behind it</span>':'')+(dc?'<span><b>'+dc+'</b> need a person</span>':'')+'<span><b>'+(act.length-done-blk-q-wt)+'</b> unaffected and moving</span></div>';
+ h+='<div class="jscroll"><div class="jflow" id="flow">';
+ STAGES.forEach(function(l,i){var ss=act.filter(function(a){return a.line===l[0]}),nd=ss.filter(function(a){return stepState(a.id)[0]==='done'}).length;
+  h+='<div class="jstage"><div class="jstage-h"><span class="n">Stage '+(i+1)+'</span><b>'+l[1]+'</b><small>'+(ss.length?nd+' of '+ss.length+' done':'Not needed in this segment')+'</small></div>'+ss.map(function(a){var s=stepState(a.id);return '<button class="step s-'+s[0]+'" data-step="'+a.id+'" aria-pressed="'+(S.sel[S.seg]===a.id)+'" aria-label="'+esc(a.t+', '+SL[s[0]])+'"><span class="g" aria-hidden="true">'+SG[s[0]]+'</span><span class="tt">'+esc(a.t)+'</span><span class="mt">'+esc(s[0]==='done'||s[0]==='prog'||s[0]==='todo'?(s[1]||SL[s[0]]):SL[s[0]])+'</span><span class="hm">'+HM[mode(a.id)]+'</span></button>'}).join('')+'</div>'});
+ h+='<div class="jstage end"><div class="endnode"><b>Mandate v1 live</b>'+c.target+'</div></div></div></div>';
+ h+='<div class="mlegend">'+Object.keys(SL).map(function(k){return '<span><span class="step s-'+k+'" aria-hidden="true"><span class="g">'+SG[k]+'</span></span>'+SL[k]+'</span>'}).join('')+'<span><svg width="34" height="10" aria-hidden="true"><path d="M0 5H26" stroke="var(--gap)" stroke-width="2" stroke-dasharray="5 4"/><path d="M26 1L34 5L26 9z" fill="var(--gap)"/></svg>stops the next step</span><span>auto, agent → person, person: who does the step</span></div>';
+ if(TRACKS[S.seg]){var drop=ch()===1;h+='<div class="tracks"><div class="eyebrow">One mandate version per entity, so one entity does not stop the others</div>'+TRACKS[S.seg].map(function(t){return '<div class="track"><span style="font-weight:600">'+esc(t[0].replace('Northstar ',''))+'</span>'+t[1].map(function(x,i){if(drop&&x==='block')x='done';if(drop&&x==='queued')x='prog';return '<span class="seg2 s-'+x+'" title="'+STAGES[i][1]+': '+SL[x]+'">'+(x==='block'?'≠ blocked':x==='queued'?'waits':x==='done'?'✓':x==='prog'?'◐':'')+'</span>'}).join('')+'</div>'}).join('')+'<div class="track muted" style="font-size:11px">'+'<span></span>'+STAGES.map(function(l,i){return '<span style="text-align:center">'+(i+1)+'</span>'}).join('')+'</div></div>'}
+ h+='</div><aside class="card" id="mpanel" aria-live="polite"></aside></div>';
+ $('#view-map').innerHTML=h;drawStepPanel();drawLinks();
+}
+function drawStepPanel(){
+ var id=S.sel[S.seg],a=CAT.filter(function(x){return x.id===id})[0],el=$('#mpanel');if(!a){el.innerHTML='<div class="card-b">No steps in this journey. Add some in the journey builder.</div>';return}
+ var s=stepState(id),si=STAGES.map(function(l){return l[0]}).indexOf(a.line),cls=C[S.seg].clauses(),ci=cls.map(function(q){return q.k}).indexOf(a.cl),why=(WHY[S.seg]||{})[id],pairs=blockPairs();
+ var blocks=pairs.filter(function(p){return p[0]===id}).map(function(p){return CAT.filter(function(x){return x.id===p[1]})[0].t}),behind=pairs.filter(function(p){return p[1]===id}).map(function(p){return CAT.filter(function(x){return x.id===p[0]})[0].t});
+ var live=(s[0]==='block'||s[0]==='wait'||s[0]==='decide'||(s[0]==='prog'&&why));
+ var h='<div class="card-b" style="border-bottom:1px solid var(--line)"><div class="eyebrow">Stage '+(si+1)+' · '+STAGES[si][1]+'</div><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-top:4px;flex-wrap:wrap"><h3>'+esc(a.t)+'</h3><span class="pill2 s-'+s[0]+'">'+SL[s[0]]+'</span></div>'+(s[1]?'<p class="muted" style="font-size:13px;margin-top:4px">'+esc(s[1])+'</p>':'')+'</div><div class="card-b pgrid"><div class="stack">';
+ if(why&&live)h+='<div class="why'+(s[0]==='block'?'':' soft')+'">'+esc(why)+'</div>';
+ if(blocks.length)h+='<div><div class="eyebrow">Stops</div><p>'+esc(blocks.join(', '))+'. Nothing else is stopped.</p></div>';
+ if(behind.length)h+='<div><div class="eyebrow">Waits behind</div><p>'+esc(behind.join(', '))+'</p></div>';
+ if(ci>=0)h+='<div><button class="btn'+(live?' primary':'')+'" data-toclause="'+a.cl+'">'+(s[0]==='block'||s[0]==='wait'?'See the proof and options':'Open in the mandate record')+' · clause '+(ci+1)+'</button></div>';
+ h+='</div><dl class="dl2"><div><dt>What happens here</dt><dd>'+esc(a.what)+'</dd></div><div><dt>Who does it in '+SEGS[S.seg][0]+'</dt><dd>'+MODES[mode(id)]+'</dd></div><div><dt>Pattern drawn from</dt><dd class="muted">'+esc(a.ref)+'</dd></div></dl>';
+ h+='</div>';el.innerHTML=h;
+}
+
+/* ---------- record ---------- */
+var GLYPH={proven:'✓',confirmed:'✓',waiting:'…',conflict:'≠',later:'→'};
+function drawRecord(){
+ var c=C[S.seg],cls=c.clauses(),op=S.open[S.seg],k=ch();
+ var h='<div class="rec"><div class="card"><div class="sheet-h"><div class="eyebrow">'+SEGS[S.seg][0]+' · account mandate · draft version 1</div><h2>'+esc(c.name)+'</h2><div class="tags">'+c.tags.map(function(t){return '<span><b>'+esc(t[0])+'</b>'+(t[1]?' · '+esc(t[1]):'')+'</span>'}).join('')+'</div></div>';
+ cls.forEach(function(q,i){
+  var steps=active().filter(function(s){return s.cl===q.k});
+  h+='<article class="clause '+q.s+'" id="cl-'+q.k+'"><div class="no">'+(i+1)+'</div><div style="min-width:0"><div class="cl-h"><h3>'+esc(q.t)+'</h3><span class="proof '+q.s+'"><span aria-hidden="true">'+GLYPH[q.s]+'</span>'+PROOF[q.s]+'</span></div>';
+  if(q.single)h+='<div class="single">'+rich(q.single,q.k)+'</div>';
+  else h+='<div class="pair"><div><div class="eyebrow">The customer states</div>'+rich(q.claim,q.k)+'</div><div><div class="eyebrow">The sources show</div>'+rich(q.proof,q.k)+'</div></div>';
+  if(q.diff)h+='<div class="diff">'+rich(q.diff,q.k)+'</div>';
+  if(op&&op.cl===q.k&&c.src[op.src]){var d=c.src[op.src],lang=(d.en&&S.lang==='en')?'en':'orig';
+   h+='<div class="excerpt"><div class="ex-h"><span>'+esc(d.t)+'</span><span class="lang">'+(d.en?'<button data-lang="orig" aria-pressed="'+(lang==='orig')+'">Original</button><button data-lang="en" aria-pressed="'+(lang==='en')+'">English</button>':'')+'<button data-close="1">Close</button></span></div><div class="ex-b">'+d[lang].map(function(x){return '<p>'+x+'</p>'}).join('')+'</div><div class="ex-f">'+esc(d.f)+'</div></div>'}
+  if(q.opts){h+='<div class="opts"><p>'+esc(q.opts[0])+'</p><div class="optgrid">'+q.opts[1].map(function(o,j){return '<div class="opt'+(k===j?' on':'')+'"><h4>'+esc(o[0])+'</h4><dl><div><dt>Go-live</dt><dd>'+esc(o[1])+'</dd></div><div><dt>Customer does</dt><dd>'+esc(o[2])+'</dd></div><div><dt>Then</dt><dd>'+esc(o[3])+'</dd></div></dl>'+(k===j?'<button class="btn" data-undo="1">Chosen · undo</button>':'<button class="btn'+(j===0&&k<0?' primary':'')+'" data-opt="'+j+'">'+(o[4].indexOf('go:')===0?'Draft the request':'Choose')+'</button>')+'</div>'}).join('')+'</div></div>'}
+  if(steps.length)h+='<div class="steps-f"><span>Steps behind this clause</span>'+steps.map(function(s){return '<span class="stp" title="'+esc(s.what)+'"><i>'+esc(s.t)+'</i> · '+MSHORT[mode(s.id)]+'</span>'}).join('')+'</div>';
+  h+='</div></article>'});
+ h+='</div>';
+ var need=cls.filter(function(q){return q.s!=='later'}),ok=need.filter(function(q){return q.s==='proven'||q.s==='confirmed'}).length,open=cls.filter(function(q){return q.s==='waiting'||q.s==='conflict'});
+ h+='<aside class="rail"><div class="card"><div class="card-b"><div class="eyebrow">Proven so far</div><div class="big num">'+ok+' <span style="font:500 14px var(--body);color:var(--muted)">of '+need.length+' clauses</span></div><div class="meter" aria-hidden="true">'+cls.map(function(q){return '<i class="'+q.s+'"></i>'}).join('')+'</div><p class="muted" style="font-size:13px">'+(cls.length-need.length)+' more follow once these are settled.</p></div></div>';
+ h+='<div class="card"><div class="card-b" style="padding-bottom:12px"><div class="eyebrow">Between this draft and a live mandate</div></div>'+(open.length?open.map(function(q){return '<button class="block" data-jump="'+q.k+'"><span class="k">Clause '+(cls.indexOf(q)+1)+' · '+PROOF[q.s]+'</span><b>'+esc(q.t)+'</b></button>'}).join(''):'<div class="block">Nothing. Every clause that can be proven is proven.</div>')+'</div>';
+ h+='<div class="card"><div class="card-b"><dl class="kv"><dt>Day</dt><dd class="num">'+c.day+' of '+c.of+'</dd><dt>Target</dt><dd>'+c.target+'</dd><dt>For</dt><dd>'+c.goal+'</dd><dt>Safe if</dt><dd>'+esc(c.safe)+'</dd></dl></div></div></aside></div>';
+ $('#view-record').innerHTML=h;
+}
+
+/* ---------- authority grid ---------- */
+function ruleFor(ent){return (S.seg==='cp'&&/B\.V\./.test(ent))?[[null,'2A']]:bands()}
+function drawGrid(){
+ var c=C[S.seg],sg=c.signers(),b=bands(),t=S.test[S.seg]||(S.test[S.seg]={acc:S.seg==='cp'?11:0,amt:S.seg==='bb'?12000:S.seg==='cm'?40000:750000,prep:'',picks:S.seg==='cp'?['Raj Patel','Ingrid Holm']:[sg[0][0]]});
+ t.picks=t.picks.filter(function(n){return sg.some(function(s){return s[0]===n})});if(t.acc>=c.accounts.length)t.acc=0;
+ var acc=c.accounts[t.acc],rule=ruleFor(acc[0]),band=rule.filter(function(x){return x[0]==null||t.amt<=x[0]})[0]||rule[rule.length-1];
+ var A=0,B=0,notes=[],counted={};
+ t.picks.forEach(function(n){var s=sg.filter(function(x){return x[0]===n})[0],cell=c.cell(acc[0],n);
+  if(n===t.prep){notes.push(n+' prepared this payment and cannot approve it.');return}
+  if(cell[0]!=='ok'){notes.push(n+' '+cell[1]+'.');return}
+  counted[n]=1;if(s[1]==='A')A++;else if(s[1]==='B')B++});
+ var pass={'1A':A>=1,'2ANY':A+B>=2,'1A1B':A>=1&&A+B>=2,'2A':A>=2}[band[1]];
+ var h='<div class="two"><div class="card"><div class="card-h"><h3>The rule</h3><span class="muted">'+(S.seg==='bb'?'Template for a simple business':'Bands by amount and signer class')+'</span></div><div class="card-b">';
+ b.forEach(function(x,i){h+='<div class="band">'+(x[0]==null?'<div class="field"><span>Band '+(i+1)+'</span><span style="font-weight:400">'+(b.length===1?'Any amount':'Above the last limit')+'</span></div>':'<label class="field">Band '+(i+1)+' · up to (GBP)<input class="num" type="number" min="0" step="1000" id="lim-'+i+'" data-lim="'+i+'" value="'+x[0]+'"></label>')+'<label class="field">Needs<select id="cmb-'+i+'" data-cmb="'+i+'">'+Object.keys(COMBO).map(function(k){return '<option value="'+k+'"'+(k===x[1]?' selected':'')+'>'+COMBO[k]+'</option>'}).join('')+'</select></label></div>'});
+ h+='<div class="words">'+ruleWords().map(esc).join('<br>')+'<br><span class="muted">The preparer of a payment cannot approve it.'+(S.seg==='cp'?' The B.V.\'s accounts keep its register rule: two directors jointly.':'')+'</span></div></div></div>';
+ h+='<div class="card"><div class="card-h"><h3>Try a payment</h3><span class="muted">Tick approvers in the grid below</span></div><div class="card-b"><div class="try"><label class="field">From account<select id="t-acc">'+c.accounts.map(function(a,i){return '<option value="'+i+'"'+(i===t.acc?' selected':'')+'>'+esc((S.seg==='cp'?a[0].replace('Northstar ','')+' · ':'')+a[1]+' '+a[2])+'</option>'}).join('')+'</select></label><label class="field">Amount (GBP)<input class="num" type="number" min="0" step="500" id="t-amt" value="'+t.amt+'"></label><label class="field">Prepared by<select id="t-prep"><option value="">Someone else</option>'+sg.map(function(s){return '<option'+(s[0]===t.prep?' selected':'')+'>'+esc(s[0])+'</option>'}).join('')+'</select></label></div><div class="result '+(pass?'pass':'fail')+'" id="t-res">'+(pass?'Would be approved':'Would be held')+' · '+gbp(t.amt)+'<small>This account and amount need: '+low(COMBO[band[1]])+'. Counted: '+A+' class A, '+B+' class B.'+(notes.length?' '+esc(notes.join(' ')):'')+'</small></div></div></div></div>';
+ h+='<div class="card"><div class="card-h"><h3>Who may act on which account</h3><div class="legend"><span><span class="c ok">A</span>may approve</span>'+(S.seg==='cp'?'<span><span class="c prep">prepare</span>only</span>':'')+(S.seg==='cm'&&ch()!==1?'<span><span class="c unproven">unproven</span>stated, no source</span>':'')+(S.seg==='bb'&&ch()!==2?'<span><span class="c pending">pending</span>identity check</span>':'')+(S.seg==='cp'&&ch()!==1?'<span><span class="c blocked">blocked</span>delegation not binding</span>':'')+'</div></div><div class="scroll-x"><table class="ag"><thead><tr><th class="acc">Account</th>'+sg.map(function(s,i){return '<th><label><input type="checkbox" id="ap-'+i+'" data-pick="'+esc(s[0])+'"'+(t.picks.indexOf(s[0])>=0?' checked':'')+'>'+esc(s[0])+'<small>'+esc(s[2])+' · '+s[1]+'</small></label></th>'}).join('')+'</tr></thead><tbody>';
+ var last='';c.accounts.forEach(function(a,i){if(a[0]!==last){last=a[0];h+='<tr class="ent"><td colspan="'+(sg.length+1)+'">'+esc(a[0])+'</td></tr>'}
+  h+='<tr class="'+(i===t.acc?'sel':'')+'"><td class="acc"><button data-acc="'+i+'" title="Use this account in the test">'+esc(a[1])+' <small>'+a[2]+'</small></button></td>'+sg.map(function(s){var cell=c.cell(a[0],s[0]),lab={ok:s[1],prep:'prepare',none:'·',blocked:'blocked',unproven:'unproven',pending:'pending'}[cell[0]];return '<td><span class="c '+cell[0]+(i===t.acc&&counted[s[0]]?' counted':'')+'" title="'+esc(s[0]+(cell[0]==='ok'?' may approve'+(cell[1]?', '+cell[1]:''):' '+cell[1]))+'">'+lab+'</span></td>'}).join('')+'</tr>'});
+ h+='</tbody></table></div></div>';
+ $('#view-grid').innerHTML=h;
+}
+
+/* ---------- request ---------- */
+function draft(){var r=C[S.seg].req;if(!S.draft[S.seg])S.draft[S.seg]={subject:r.subject,body:r.body};return S.draft[S.seg]}
+function drawRequest(){
+ var c=C[S.seg],r=c.req,d=draft(),stt=S.req[S.seg]||(r.auto?'sent':'draft'),who=S.actor[S.seg]||0;
+ var h='<div class="reqgrid"><div class="card"><div class="card-h"><h3>One request, in plain words</h3><div class="flow"><span class="on">Drafted</span>'+(r.auto?'<span class="on">Sent by policy · 14 Nov</span>':'<span class="'+(stt!=='draft'?'on':'')+'">Approved</span><span class="'+(stt==='sent'?'on':'')+'">Sent</span>')+'</div></div><div class="card-b stack"><div><div class="eyebrow" style="margin-bottom:4px">What we found</div>'+r.reasons.map(function(x){return '<div class="reason"><b>'+esc(x[0])+'.</b> <span class="muted">'+esc(x[1])+'</span></div>'}).join('')+'<div class="merge">'+r.reasons.length+' finding'+(r.reasons.length>1?'s':'')+', one request. The customer sees what to do, not the findings.</div></div><label class="field">Heading<input id="rq-subject" value="'+esc(d.subject)+'"'+(stt==='sent'?' readonly':'')+'></label><label class="field">Message<textarea id="rq-body" rows="5"'+(stt==='sent'?' readonly':'')+'>'+esc(d.body)+'</textarea></label>';
+ if(r.auto)h+='<div class="note ok"><b>Sent automatically.</b> In Business Banking a reminder to finish an identity check needs no approval. Anything that changes the rule or the signers stops for a person.</div>';
+ else h+='<label class="field" style="max-width:320px">Acting as<select id="rq-who">'+r.people.map(function(p,i){return '<option value="'+i+'"'+(i===who?' selected':'')+'>'+esc(p)+'</option>'}).join('')+'</select></label><div class="btns"><button class="btn primary" id="rq-ap"'+(stt!=='draft'||who!==0?' disabled':'')+'>Approve</button><button class="btn" id="rq-send"'+(stt!=='approved'||who!==1?' disabled':'')+'>Send to customer</button></div><p class="muted" style="font-size:13px">'+(stt==='draft'?(who===0?'The onboarding manager approves. The relationship director sends.':'Only the onboarding manager can approve this draft.'):stt==='approved'?(who===1?'Approved by Jon Bell. You can send it.':'You approved this request, so you cannot send it. Switch to the relationship director.'):'Sent. The customer\'s app now shows the request.')+'</p>';
+ h+='</div></div><div><div class="eyebrow" style="margin-bottom:8px">On the customer\'s phone</div><div class="phone"><div class="bar"></div><div class="eyebrow">Business accounts</div><h4 style="margin-top:2px">'+esc(c.name)+'</h4><ul class="plist">'+r.steps.map(function(s){return '<li class="'+s[2]+'"><span class="dot"></span><span>'+(s[2]==='n'?'<b>'+esc(s[0])+'</b>':esc(s[0]))+(s[1]?'<small>'+esc(s[1])+'</small>':'')+'</span></li>'}).join('')+'</ul><div class="ask"><h4 id="pv-subject">'+esc(d.subject)+'</h4><p id="pv-body">'+esc(d.body)+'</p><div class="btns" style="margin-top:10px"><button class="btn" id="rq-up">'+esc(r.cta)+'</button></div></div></div></div></div>';
+ $('#view-request').innerHTML=h;
+}
+
+/* ---------- builder ---------- */
+function drawBuilder(){
+ var h='<div class="stack"><div><h2>Journey builder</h2><p class="muted" style="max-width:80ch;margin-top:4px">Decide which steps each segment gets and who does them. The journey map and the mandate record both follow your choices. The defaults: Business Banking runs straight through from the registry, Commercial adds classes, bands and evidence, Corporate adds jurisdictions, delegation and a call-back.</p></div><div class="tiles">'+Object.keys(SEGS).map(function(k){var a=active(k),n=function(m){return a.filter(function(c){return mode(c.id,k)===m}).length};return '<div class="tile"><div class="eyebrow">'+SEGS[k][0]+'</div><div class="big num">'+a.length+' <span style="font:500 14px var(--body);color:var(--muted)">steps</span></div><div class="kvs"><span><b class="num">'+n('auto')+'</b> straight through</span><span><b class="num">'+n('agent')+'</b> agent then person</span><span><b class="num">'+n('person')+'</b> person-led</span></div></div>'}).join('')+'</div>';
+ h+='<div class="card"><div class="card-h"><h3>Steps by segment</h3><div class="btns"><button class="btn" id="b-reset">Reset to defaults</button><button class="btn primary" id="b-copy">Copy journey as text</button></div></div><div class="scroll-x"><table class="bt"><tr><th style="width:34%">Step</th>'+Object.keys(SEGS).map(function(k){return '<th>'+SEGS[k][0]+'</th>'}).join('')+'</tr>';
+ STAGES.forEach(function(l){h+='<tr class="ln"><td colspan="4">'+l[1]+'</td></tr>';CAT.filter(function(c){return c.line===l[0]}).forEach(function(c){h+='<tr><td><b style="font-weight:600">'+esc(c.t)+'</b><small>'+esc(c.what)+'</small><small>Pattern: '+esc(c.ref)+'</small></td>'+Object.keys(SEGS).map(function(k){var m=mode(c.id,k);return '<td><select id="cfg-'+c.id+'-'+k+'" data-cfg="'+c.id+'" data-k="'+k+'" class="'+(m==='off'?'off':'')+'" aria-label="'+esc(c.t)+' in '+SEGS[k][0]+'">'+Object.keys(MODES).map(function(o){return '<option value="'+o+'"'+(o===m?' selected':'')+'>'+MODES[o]+'</option>'}).join('')+'</select></td>'}).join('')+'</tr>'})});
+ h+='</table></div></div><div class="card" id="exp-card" hidden><div class="card-h"><h3>Journey as text</h3><span class="muted" id="exp-note"></span></div><div class="card-b"><textarea id="export" readonly aria-label="Journey as text"></textarea></div></div></div>';
+ $('#view-builder').innerHTML=h;
+}
+function exportText(){var o='# Mandate journey by segment\n';Object.keys(SEGS).forEach(function(k){o+='\n## '+SEGS[k][0]+' ('+active(k).length+' steps)\n';STAGES.forEach(function(l){var ss=active(k).filter(function(c){return c.line===l[0]});if(!ss.length)return;o+='\n'+l[1]+'\n';ss.forEach(function(c){o+='- '+c.t+' · '+MODES[mode(c.id,k)]+' · '+c.ref+'\n'})})});return o}
+
+/* ---------- render + events ---------- */
+function draw(){drawShell();({map:drawMap,record:drawRecord,grid:drawGrid,request:drawRequest,builder:drawBuilder})[S.view]()}
+function go(v){S.view=v;if(location.hash.replace('#','')!==v){try{location.hash=v}catch(e){}}draw();window.scrollTo(0,0);if(S.jump){var j=$('#cl-'+S.jump);S.jump=null;if(j)j.scrollIntoView({block:'center'})}}
+document.addEventListener('click',function(e){
+ var t=e.target,b;
+ if((b=t.closest('[data-seg]'))){S.seg=b.dataset.seg;save();draw();return}
+ if((b=t.closest('[data-view]'))){go(b.dataset.view);return}
+ if((b=t.closest('[data-step]'))){S.sel[S.seg]=b.dataset.step;var sid=b.dataset.step;drawMap();var nb=$('#flow [data-step="'+sid+'"]');if(nb)nb.focus();return}
+ if((b=t.closest('[data-toclause]'))){S.jump=b.dataset.toclause;go('record');return}
+ if((b=t.closest('.cite'))){var o=S.open[S.seg],same=o&&o.cl===b.dataset.cl&&o.src===b.dataset.src;S.open[S.seg]=same?null:{cl:b.dataset.cl,src:b.dataset.src};S.lang='orig';drawRecord();var f=$('#cl-'+b.dataset.cl+' .cite[data-src="'+b.dataset.src+'"]');if(f)f.focus();return}
+ if(t.dataset.lang){S.lang=t.dataset.lang;drawRecord();return}
+ if(t.dataset.close){S.open[S.seg]=null;drawRecord();return}
+ if((b=t.closest('[data-opt]'))){var i=+b.dataset.opt,q=C[S.seg].clauses().filter(function(x){return x.opts})[0],o2=q.opts[1][i];applyChoice(S.seg,i);if(o2[4].indexOf('go:')===0){go(o2[4].slice(3));return}drawRecord();toast(o2[4]);return}
+ if(t.dataset.undo){S.choice[S.seg]=null;S.bands[S.seg]=null;drawRecord();toast('Choice undone. The draft is back to what the customer stated.');return}
+ if((b=t.closest('[data-jump]'))){var el=$('#cl-'+b.dataset.jump);if(el)el.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});return}
+ if((b=t.closest('[data-acc]'))){S.test[S.seg].acc=+b.dataset.acc;drawGrid();return}
+ if(t.id==='rq-ap'){S.req[S.seg]='approved';drawRequest();toast('Approved by Jon Bell. A different person must send it.');return}
+ if(t.id==='rq-send'){S.req[S.seg]='sent';drawRequest();toast('Sent. The customer\'s app now shows the request.');return}
+ if(t.id==='rq-up'){toast('This is the customer\'s button, shown here as a preview.');return}
+ if(t.id==='b-reset'){defaults();save();drawBuilder();toast('Journey reset to defaults.');return}
+ if(t.id==='b-copy'){var txt=exportText();$('#exp-card').hidden=false;$('#export').value=txt;var done=function(m){$('#exp-note').textContent=m};try{navigator.clipboard.writeText(txt).then(function(){done('Copied to clipboard')},function(){$('#export').select();done('Select and copy the text below')})}catch(err){$('#export').select();done('Select and copy the text below')}return}
+});
+document.addEventListener('change',function(e){var t=e.target;
+ if(t.dataset.cfg){S.cfg[t.dataset.cfg][SI[t.dataset.k]]=t.value;save();drawBuilder();var el=$('#'+t.id);if(el)el.focus();return}
+ if(t.dataset.cmb){bands()[+t.dataset.cmb][1]=t.value;drawGrid();return}
+ if(t.dataset.lim){bands()[+t.dataset.lim][0]=Math.max(0,+t.value||0);drawGrid();return}
+ if(t.dataset.pick){var p=S.test[S.seg].picks,n=t.dataset.pick,ix=p.indexOf(n);if(t.checked&&ix<0)p.push(n);if(!t.checked&&ix>=0)p.splice(ix,1);var id=t.id;drawGrid();var el2=$('#'+id);if(el2)el2.focus();return}
+ if(t.id==='t-acc'){S.test[S.seg].acc=+t.value;drawGrid();return}
+ if(t.id==='t-prep'){S.test[S.seg].prep=t.value;drawGrid();return}
+ if(t.id==='t-amt'){S.test[S.seg].amt=Math.max(0,+t.value||0);drawGrid();return}
+ if(t.id==='rq-who'){S.actor[S.seg]=+t.value;drawRequest();return}
+});
+document.addEventListener('input',function(e){var t=e.target;
+ if(t.id==='rq-subject'){draft().subject=t.value;$('#pv-subject').textContent=t.value}
+ if(t.id==='rq-body'){draft().body=t.value;$('#pv-body').textContent=t.value}
+});
+window.addEventListener('hashchange',function(){var h=location.hash.replace('#','');if(VIEWS.some(function(v){return v[0]===h})&&h!==S.view){S.view=h;draw()}});
+var rz;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){if(S.view==='map')drawLinks()},120)});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){if(S.view==='map')drawLinks()});
+var h0=location.hash.replace('#','');if(VIEWS.some(function(v){return v[0]===h0}))S.view=h0;
+draw();
+})();
+</script>
+
+</body></html>
